@@ -7,6 +7,11 @@ class Stream:
     def __init__(self):
         self.stop_threads = False
         self.sampler = select.poll()
+        self.received_value = None
+        self.endpoints = dict()
+
+    def get_received_value(self):
+        return self.received_value
 
     def register_pipe_polling(self, reader_endpoint):
         self.sampler.register(reader_endpoint, select.POLLIN)
@@ -21,9 +26,42 @@ class Stream:
                     temp_value = Util.process_bytes(reader_endpoint)
                     print('Am primit: {0}'.format(temp_value))
 
+                    self.received_value = temp_value
+
         except KeyboardInterrupt as kbd_ex:
             self.stop_threads = True
             print('Closing reader... ')
+
+###################################################################
+    def create_reader_pipe(self, pipe_name):
+        Stream.create_pipe(pipe_name)
+        reader_endpoint = Stream.connect_to_pipe(pipe_name, True)
+        self.register_pipe_polling(reader_endpoint)
+        if pipe_name not in self.endpoints.keys():
+            self.endpoints[pipe_name] = dict()
+
+        self.endpoints[pipe_name]['reader_endpoint'] = reader_endpoint
+        return reader_endpoint
+
+    def destroy_reader_pipe(self, pipe_name):
+        if pipe_name in self.endpoints.keys():
+            reader_endpoint = self.endpoints[pipe_name]['reader_endpoint']
+            try:
+                self.unregister_pipe_polling(reader_endpoint)
+            finally:
+                pass
+
+            try:
+                Stream.disconnect_pipe(reader_endpoint)
+            finally:
+                pass
+
+            del self.endpoints[pipe_name]
+        try:
+            Stream.delete_pipe(pipe_name)
+        finally:
+            pass
+###################################################################
 
     @staticmethod
     def create_pipe(pipe_name):

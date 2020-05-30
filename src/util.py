@@ -13,12 +13,22 @@ class Util:
         return struct.unpack('f', value)[0]
 
     @staticmethod
-    def process_bytes(reader: int) -> float:
+    def process_bytes(reader: int) -> bytes:
         size_bytes = os.read(reader, 4)
         value_bytes = os.read(reader, Util.decode_value_len(size_bytes))
-        return Util.decode_value(value_bytes)
+        return value_bytes
 
     @staticmethod
     def read_temp() -> float:
         temp_value = random.random() * 10
         return temp_value
+
+    @staticmethod
+    def encode_msg_size(size: int) -> bytes:
+        return struct.pack('<I', size)
+
+    @staticmethod
+    def create_msg(content: bytes) -> bytes:
+        dim = len(content)
+        return Util.encode_msg_size(dim) + content
+
