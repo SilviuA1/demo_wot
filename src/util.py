@@ -32,3 +32,10 @@ class Util:
         dim = len(content)
         return Util.encode_msg_size(dim) + content
 
+    @staticmethod
+    def create_get_msg(content) -> bytes:
+        return Util.create_msg(content)
+
+    @staticmethod
+    def create_response_msg(content):
+        return Util.create_msg(bytearray(struct.pack('f', content)))

@@ -4,9 +4,13 @@ import datetime
 
 import glob
 import os
+from threading import Thread
 
+from stream import Stream
+from util import Util
 
 app = Flask(__name__)
+application_stream = Stream()
 
 
 def get_files_from_dir():
@@ -82,14 +86,27 @@ def post_data_to_dir():
 
 @app.route('/api/directory', methods=['GET'])
 def display_files():
-    files = glob.glob("./test_dir/*")
-    response = dict()
-    count = 1
-    for file in files:
-        response[count] = file
-        count = count + 1
+    response = 'empty'
+    try:
+        reader_endpoint = application_stream.create_reader_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME)
 
-    return response
+        listening_thread = Thread(target=application_stream.listen_to_pipe_polling, args=(reader_endpoint,))
+
+        print("get thread started")
+
+        listening_thread.daemon = True
+        listening_thread.start()
+        message = Util.create_get_msg(b"GET")
+        writer_endpoint = application_stream.connect_to_pipe(Stream.DEFAULT_FIFO_NAME, False)
+        Stream.write_to_pipe(writer_endpoint, message)
+
+        listening_thread.join()
+        response = application_stream.get_received_value()
+        response = Util.decode_value(response)
+    finally:
+        application_stream.destroy_reader_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME)
+
+    return str(response)
 
 
 if __name__ == "__main__":

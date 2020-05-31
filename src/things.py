@@ -1,9 +1,10 @@
 from stream import Stream
 from threading import Thread
+from util import Util
 
 
 if __name__ == '__main__':
-    FIFO_NAME = "/tmp/comm"
+    FIFO_NAME = Stream.DEFAULT_FIFO_NAME
     reader_endpoint = None
     thing_reader_stream = Stream()
     try:
@@ -12,10 +13,17 @@ if __name__ == '__main__':
         try:
             while thing_reader_stream.get_threads_stop_flag() is False:
                 print("Starting the listening Thread !")
-                listening_thread = Thread(target=thing_reader_stream.listen_to_pipe_polling(reader_endpoint))
+                listening_thread = Thread(target=thing_reader_stream.listen_to_pipe_polling, args=(reader_endpoint,))
                 listening_thread.daemon = True
                 listening_thread.start()
                 listening_thread.join()
+
+                if thing_reader_stream.get_received_value() == b'GET':
+                    writer_endpoint = thing_reader_stream.connect_to_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME, False)
+
+                    message = Util.create_response_msg(Util.read_temp())
+                    Stream.write_to_pipe(writer_endpoint, message)
+
 
         except KeyboardInterrupt as kbd_ex:
             pass

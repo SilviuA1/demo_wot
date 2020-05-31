@@ -4,6 +4,9 @@ from util import Util
 
 
 class Stream:
+    DEFAULT_FIFO_NAME = "/tmp/comm"
+    TEMPORARY_RESPONSE_FIFO_NAME = "/tmp/comm_resp"
+
     def __init__(self):
         self.stop_threads = False
         self.sampler = select.poll()
@@ -27,6 +30,7 @@ class Stream:
                     print('Am primit: {0}'.format(temp_value))
 
                     self.received_value = temp_value
+                    break
 
         except KeyboardInterrupt as kbd_ex:
             self.stop_threads = True
@@ -57,6 +61,7 @@ class Stream:
                 pass
 
             del self.endpoints[pipe_name]
+
         try:
             Stream.delete_pipe(pipe_name)
         finally:
