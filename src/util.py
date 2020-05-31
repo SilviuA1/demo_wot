@@ -19,9 +19,20 @@ class Util:
         return value_bytes
 
     @staticmethod
-    def read_temp() -> float:
-        temp_value = random.random() * 10
-        return temp_value
+    def read_temp(file_name) -> float:
+        ret_val = None
+        mode = 'celsius'
+        temp_value = (random.random() * 100 + 20) % 40
+        if os.path.exists(file_name):
+            file = open(file_name, 'r')
+            mode = file.readline()
+
+        if mode == 'celsius':
+            ret_val = temp_value
+        elif mode == 'kelvin':
+            ret_val = temp_value - 273.15
+
+        return ret_val
 
     @staticmethod
     def encode_msg_size(size: int) -> bytes:

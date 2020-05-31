@@ -1,9 +1,13 @@
 from stream import Stream
 from threading import Thread
 from util import Util
+import sys
 
+config_file_name = './test_dir/'
 
 if __name__ == '__main__':
+    senzor_name = sys.argv[1]
+    config_file_name = config_file_name + str(senzor_name)
     FIFO_NAME = Stream.DEFAULT_FIFO_NAME
     reader_endpoint = None
     thing_reader_stream = Stream()
@@ -21,9 +25,8 @@ if __name__ == '__main__':
                 if thing_reader_stream.get_received_value() == b'GET':
                     writer_endpoint = thing_reader_stream.connect_to_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME, False)
 
-                    message = Util.create_response_msg(Util.read_temp())
+                    message = Util.create_response_msg(Util.read_temp(config_file_name))
                     Stream.write_to_pipe(writer_endpoint, message)
-
 
         except KeyboardInterrupt as kbd_ex:
             pass

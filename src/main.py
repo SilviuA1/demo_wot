@@ -66,20 +66,22 @@ def delete_file(fileName):
         abort(404)
 
 
-@app.route('/api/directory', methods=['POST'])
-def post_data_to_dir():
-    uniq_filename = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+@app.route('/api/directory/<senzorName>', methods=['POST'])
+def post_data_to_dir(senzorName):
+    uniq_filename = senzorName+"_config"
     file = './test_dir/' + uniq_filename
-    print(file)
-    data = request.get_data()
-    print (data)
+    data = request.get_json()
+    print(data)
 
     if not data or len(data) == 0:
         return "No content", 204
 
+    if os.path.exists(file):
+        return "File already exists", 400
+
     os.mknod(file)
-    file = open(file, 'w+')
-    file.write(data.decode('ascii'))
+    file = open(file, 'w')
+    file.write(data['resolution'])
     file.close()
     return "OK"
 
