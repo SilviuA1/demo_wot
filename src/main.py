@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import abort, request
-from flask import jsonify
+from flask import jsonify, make_response
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 
 from flask_restful import Api
 import resources
@@ -10,10 +11,24 @@ import os
 from threading import Thread
 
 from stream import Stream
-from util import Util
+from util import Util, Users
 
 app = Flask(__name__)
 api = Api(app)
+
+app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+jwt = JWTManager(app)
+
+
+# resources for AUTH
+api.add_resource(resources.UserRegistration, '/registration')
+api.add_resource(resources.UserLogin, '/login')
+api.add_resource(resources.UserLogoutAccess, '/logout/access')
+api.add_resource(resources.UserLogoutRefresh, '/logout/refresh')
+api.add_resource(resources.TokenRefresh, '/token/refresh')
+api.add_resource(resources.AllUsers, '/users')
+api.add_resource(resources.SecretResource, '/secret')
+
 
 application_stream = Stream()
 
@@ -58,7 +73,12 @@ def delete_file(fileName):
 
 
 @app.route('/api/directory/<sensorName>', methods=['PUT'])
+@jwt_required
 def create_or_replace(sensorName):
+    user_id = get_jwt_identity()
+    if Users.get_users()[user_id]['role'] != 'admin':
+        return make_response(jsonify({"message": "You don't have the right acces!"}), 400)
+
     uniq_filename = sensorName+"_config"
     file = './test_dir/' + uniq_filename
     data = request.get_json()
@@ -78,7 +98,12 @@ def create_or_replace(sensorName):
 
 
 @app.route('/api/directory/<sensorName>', methods=['POST'])
+@jwt_required
 def post_data_to_dir(sensorName):
+    user_id = get_jwt_identity()
+    if Users.get_users()[user_id]['role'] != 'admin':
+        return make_response(jsonify({"message": "You don't have the right acces!"}), 400)
+
     uniq_filename = sensorName+"_config"
     file = './test_dir/' + uniq_filename
     data = request.get_json()
@@ -100,6 +125,7 @@ def post_data_to_dir(sensorName):
 
 
 @app.route('/api/directory', methods=['GET'])
+@jwt_required
 def display_files():
     response = 'empty'
     try:

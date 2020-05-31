@@ -3,6 +3,23 @@ import os
 import random
 
 
+class Users:
+    users_table = {
+        'Geo': {
+            'password': 'abc',
+            'role': 'admin'
+        },
+        'Hot': {
+            'password': 'bca',
+            'role': 'user'
+        }
+    }
+
+    @staticmethod
+    def get_users():
+        return Users.users_table
+
+
 class Util:
     @staticmethod
     def decode_value_len(size: bytes) -> int:

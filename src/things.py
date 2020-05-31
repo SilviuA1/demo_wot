@@ -7,7 +7,8 @@ config_file_name = './test_dir/'
 
 if __name__ == '__main__':
     sensor_name = sys.argv[1]
-    config_file_name = config_file_name + str(sensor_name)
+    config_file_name = config_file_name + str(sensor_name) + "_config"
+    print(config_file_name)
     FIFO_NAME = Stream.DEFAULT_FIFO_NAME
     reader_endpoint = None
     thing_reader_stream = Stream()
