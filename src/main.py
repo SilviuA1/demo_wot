@@ -130,7 +130,7 @@ def post_data_to_dir(sensorName):
 @app.route('/api/directory', methods=['GET'])
 @jwt_required
 def display_files():
-    response = 'empty'
+    writer_endpoint = None
     try:
         reader_endpoint = application_stream.create_reader_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME)
 
@@ -148,6 +148,10 @@ def display_files():
         response = application_stream.get_received_value()
         response = Util.decode_value(response)
     finally:
+        message = Util.create_get_msg(b"EOF")
+        if writer_endpoint is not None:
+            Stream.write_to_pipe(writer_endpoint, message)
+
         application_stream.destroy_reader_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME)
 
     return str(response)

@@ -24,10 +24,15 @@ if __name__ == '__main__':
                 listening_thread.join()
 
                 if thing_reader_stream.get_received_value() == b'GET':
-                    writer_endpoint = thing_reader_stream.connect_to_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME, False)
+                    writer_endpoint = thing_reader_stream.check_endpoint_exists(Stream.TEMPORARY_RESPONSE_FIFO_NAME)
+                    if writer_endpoint is False:
+                        writer_endpoint = thing_reader_stream.connect_to_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME, False)
 
                     message = Util.create_response_msg(Util.read_temp(config_file_name))
                     Stream.write_to_pipe(writer_endpoint, message)
+
+                elif thing_reader_stream.get_received_value() == b'EOF':
+                    thing_reader_stream.disconnect_pipe(Stream.TEMPORARY_RESPONSE_FIFO_NAME)
 
         except KeyboardInterrupt as kbd_ex:
             pass

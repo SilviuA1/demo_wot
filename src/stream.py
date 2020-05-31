@@ -39,12 +39,9 @@ class Stream:
 ###################################################################
     def create_reader_pipe(self, pipe_name):
         Stream.create_pipe(pipe_name)
-        reader_endpoint = Stream.connect_to_pipe(pipe_name, True)
+        reader_endpoint = self.connect_to_pipe(pipe_name, True)
         self.register_pipe_polling(reader_endpoint)
-        if pipe_name not in self.endpoints.keys():
-            self.endpoints[pipe_name] = dict()
 
-        self.endpoints[pipe_name]['reader_endpoint'] = reader_endpoint
         return reader_endpoint
 
     def destroy_reader_pipe(self, pipe_name):
@@ -56,11 +53,9 @@ class Stream:
                 pass
 
             try:
-                Stream.disconnect_pipe(reader_endpoint)
+                self.disconnect_pipe(pipe_name)
             finally:
                 pass
-
-            del self.endpoints[pipe_name]
 
         try:
             Stream.delete_pipe(pipe_name)
@@ -72,18 +67,23 @@ class Stream:
     def create_pipe(pipe_name):
         os.mkfifo(path=pipe_name, mode=0o600)
 
-    @staticmethod
-    def connect_to_pipe(pipe_name, flag_read):
+    def connect_to_pipe(self, pipe_name, flag_read):
         if flag_read is True:
             reader_endpoint = os.open(pipe_name, os.O_RDONLY | os.O_NONBLOCK)
         else:
             reader_endpoint = os.open(pipe_name, os.O_WRONLY)
 
+        if pipe_name not in self.endpoints.keys():
+            self.endpoints[pipe_name] = dict()
+
+        self.endpoints[pipe_name]['reader_endpoint'] = reader_endpoint
+
         return reader_endpoint
 
-    @staticmethod
-    def disconnect_pipe(reader_endpoint):
+    def disconnect_pipe(self, pipe_name):
+        reader_endpoint = self.endpoints[pipe_name]['reader_endpoint']
         os.close(reader_endpoint)
+        del self.endpoints[pipe_name]
 
     @staticmethod
     def delete_pipe(pipe_name):
@@ -95,6 +95,11 @@ class Stream:
 
     def get_threads_stop_flag(self):
         return self.stop_threads
+
+    def check_endpoint_exists(self, pipe_name):
+        if pipe_name in self.endpoints.keys():
+            return self.endpoints[pipe_name]
+        return False
 
     def __del__(self):
         self.stop_threads = True
