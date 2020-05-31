@@ -10,16 +10,11 @@ from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 jwt_required, jwt_refresh_token_required,
                                 get_raw_jwt)
 
+blacklist = set()
 
 parser = reqparse.RequestParser()
 parser.add_argument('username', help='This field cannot be blank', required=True)
 parser.add_argument('password', help='This field cannot be blank', required=True)
-
-
-class UserRegistration(Resource):
-    def post(self):
-        data = parser.parse_args()
-        return data
 
 
 class UserLogin(Resource):
@@ -43,30 +38,8 @@ class UserLogin(Resource):
 
 
 class UserLogoutAccess(Resource):
+    @jwt_required
     def post(self):
-        return {'message': 'User logout'}
-
-
-class UserLogoutRefresh(Resource):
-    def post(self):
-        return {'message': 'User logout'}
-
-
-class TokenRefresh(Resource):
-    def post(self):
-        return {'message': 'Token refresh'}
-
-
-class AllUsers(Resource):
-    def get(self):
-        return {'message': 'List of users'}
-
-    def delete(self):
-        return {'message': 'Delete all users'}
-
-
-class SecretResource(Resource):
-    def get(self):
-        return {
-            'answer': 42
-        }
+        jti = get_raw_jwt()['jti']
+        blacklist.add(jti)
+        return make_response(jsonify({"msg": "Successfully logged out"}), 200)

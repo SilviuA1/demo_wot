@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 
 from flask_restful import Api
 import resources
+from resources import blacklist
 
 import glob
 import os
@@ -17,20 +18,22 @@ app = Flask(__name__)
 api = Api(app)
 
 app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+app.config['JWT_BLACKLIST_ENABLED'] = True
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
 jwt = JWTManager(app)
 
 
 # resources for AUTH
-api.add_resource(resources.UserRegistration, '/registration')
 api.add_resource(resources.UserLogin, '/login')
 api.add_resource(resources.UserLogoutAccess, '/logout/access')
-api.add_resource(resources.UserLogoutRefresh, '/logout/refresh')
-api.add_resource(resources.TokenRefresh, '/token/refresh')
-api.add_resource(resources.AllUsers, '/users')
-api.add_resource(resources.SecretResource, '/secret')
-
 
 application_stream = Stream()
+
+
+@jwt.token_in_blacklist_loader
+def check_if_token_in_blacklist(decrypted_token):
+    jti = decrypted_token['jti']
+    return jti in blacklist
 
 
 def get_files_from_dir():
