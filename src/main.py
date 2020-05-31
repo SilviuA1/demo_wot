@@ -1,6 +1,9 @@
 from flask import Flask
 from flask import abort, request
-import datetime
+from flask import jsonify
+
+from flask_restful import Api
+import resources
 
 import glob
 import os
@@ -10,6 +13,8 @@ from stream import Stream
 from util import Util
 
 app = Flask(__name__)
+api = Api(app)
+
 application_stream = Stream()
 
 
@@ -41,20 +46,6 @@ def get_file_contents(fileName):
     return response
 
 
-@app.route('/api/directory/<fileName>', methods=['PUT'])
-def create_or_replace(fileName):
-    files = get_files_from_dir()
-    filename_path = ''
-
-    if fileName in files:
-        return "NOK", 204
-    else:
-        filename_path = './test_dir/' + fileName
-        os.mknod(filename_path)
-
-    return "File " + filename_path + " created", 201
-
-
 @app.route('/api/directory/<fileName>', methods=['DELETE'])
 def delete_file(fileName):
     files = get_files_from_dir()
@@ -66,9 +57,29 @@ def delete_file(fileName):
         abort(404)
 
 
-@app.route('/api/directory/<senzorName>', methods=['POST'])
-def post_data_to_dir(senzorName):
-    uniq_filename = senzorName+"_config"
+@app.route('/api/directory/<sensorName>', methods=['PUT'])
+def create_or_replace(sensorName):
+    uniq_filename = sensorName+"_config"
+    file = './test_dir/' + uniq_filename
+    data = request.get_json()
+    print(data)
+
+    if not data or len(data) == 0:
+        return "No content", 204
+
+    if not os.path.exists(file):
+        return "File does not exists", 400
+    else:
+        file = open(file, 'w')
+        file.write(data['resolution'])
+        file.close()
+
+    return "OK"
+
+
+@app.route('/api/directory/<sensorName>', methods=['POST'])
+def post_data_to_dir(sensorName):
+    uniq_filename = sensorName+"_config"
     file = './test_dir/' + uniq_filename
     data = request.get_json()
     print(data)
@@ -78,12 +89,14 @@ def post_data_to_dir(senzorName):
 
     if os.path.exists(file):
         return "File already exists", 400
+    else:
+        os.mknod(file)
+        file = open(file, 'w')
+        file.write(data['resolution'])
+        file.close()
 
-    os.mknod(file)
-    file = open(file, 'w')
-    file.write(data['resolution'])
-    file.close()
-    return "OK"
+    return_message = jsonify({'message': 'OK'})
+    return return_message
 
 
 @app.route('/api/directory', methods=['GET'])
